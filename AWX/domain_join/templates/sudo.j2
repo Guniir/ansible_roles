@@ -1,0 +1,4 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+{% for sudogroup in sudogroups %}
+%{{ sudogroup }}@kifr-ru.local ALL=(ALL) ALL
+{% endfor %}

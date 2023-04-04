@@ -1,0 +1,51 @@
+#cloud-config
+autoinstall:
+  version: 1
+  interactive-sections:
+    - network
+    - identity
+  write_files:
+   - path: /etc/apt/apt.conf
+     permissions: 0640
+     owner: root
+     content:
+       Acquire::http::proxy "http://{{ ansible_host }}:3142";
+       Acquire::https::proxy "https://{{ ansible_host }}:3142";
+  package_upgrade: true
+  early-commands:
+   - snap set system proxy.http="http://{{ ansible_host }}:3142"
+   - snap set system proxy.https="https://{{ ansible_host }}:3142"
+  locale: ru_RU
+  keyboard:
+    layout: en
+    variant: us
+  apt:
+    geoip: false
+    primary:
+      - arches: [default]
+        # uri: "http://archive.ubuntu.com/ubuntu"
+        search:
+          - http://mirror.yandex.ru/ubuntu/
+          - http://ru.archive.ubuntu.com/ubuntu/
+  # proxy:
+  #   http://{{ ansible_host }}:3142
+  # packages:
+  #  - ubuntu-desktop
+  storage:
+    layout:
+      name: lvm
+  ssh:
+    install-server: yes
+    allow-pw: yes
+  late-commands:
+    - useradd -m -R /target -u 1001 -s /bin/bash administrator
+    - echo 'administrator:$6$kxQGIrYw$tXKtoszNHwctxpFmUbKpLlQnHiLqp27PvnfSisoaQCPnjupuU9P61bUlcU0tU.6kdzodOOr1ocRlzaxe2UBvF/' | chroot /target /usr/sbin/chpasswd -e
+    - usermod -R /target -aG sudo administrator
+    - mkdir -p /target/hoff_install/
+    - cp -Rf /cdrom/pool/extra/* /target/hoff_install/
+    - wget -nH -P /target/hoff_install/ http://{{ ansible_host }}/desktop/postinstall_ubuntu_desktop.sh
+    - wget -r --no-parent -nH -P /target/hoff_install/ http://{{ ansible_host }}/desktop/postinstall.service
+    # - wget -r --no-parent -nH -P /target/etc/systemd/system/ http://{{ ansible_host }}/desktop/postinstall.service
+    - chmod +x /target/hoff_install/postinstall_ubuntu_desktop.sh
+    - cp -Rf /target/hoff_install/desktop/postinstall.service /target/etc/systemd/system
+    - curtin in-target --target=/target -- systemctl enable postinstall

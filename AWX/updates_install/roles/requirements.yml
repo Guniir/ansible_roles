@@ -1,0 +1,2 @@
+- src: git@gitlab.hoff.ru:linux_unix/ansible/updates_install.git
+  scm: git

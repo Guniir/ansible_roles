@@ -1,0 +1,8 @@
+---
+- name: Какой-то минимальный стандарт + заведение в домен
+  hosts: all
+  become: true
+  become_user: root
+
+  roles:
+    - domain_join

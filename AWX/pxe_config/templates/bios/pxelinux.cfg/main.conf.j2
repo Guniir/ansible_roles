@@ -1,0 +1,37 @@
+UI vesamenu.c32
+ALLOWOPTIONS 0
+PROMPT 0
+MENU TITLE BIOS Level 2
+
+MENU COLOR border 30;40 #00000000 #00000000 none
+MENU COLOR title 1;36;40 #c00090f0 #00000000 std
+MENU COLOR unsel 37;40 #90ffffff #00000000 std
+MENU COLOR hotkey 1;37;40 #ffffffff #00000000 std
+MENU COLOR sel 7;37;40 #e0000000 #20ff8000 all
+MENU COLOR scrollbar 30;40 #40000000 #00000000 std
+
+LABEL sccm
+MENU LABEL Start to SCCM
+COM32 pxechn.c32
+APPEND {{ sccm_dp }}::smsboot\cdl001b4\x64\wdsnbp.com -W
+
+LABEL Thin Boot
+MENU LABEL Thin Boot
+KERNEL http://{{ ansible_host }}/thinstation/boot/vmlinuz
+INITRD http://{{ ansible_host }}/thinstation/boot/initrd
+APPEND ip=dhcp splash=off load_ramdisk=1 ramdisk_blocksize=4096 root=/dev/ram0 ramdisk_size=2048000 console=tty1 vt.global_cursor_default=0 quiet loglevel=3 LM=3
+
+LABEL Ubuntu Desktop Install
+MENU LABEL Ubuntu Desktop Install
+KERNEL http://{{ ansible_host }}/OMNI/vmlinuz
+INITRD http://{{ ansible_host }}/OMNI/initrd
+APPEND boot=casper toram netboot=nfs nfsroot={{ ansible_host }}:/var/www/html/Ubuntu_20.04 root=/dev/nfs ro ip=dhcp autoinstall ds=nocloud-net;s=http://{{ ansible_host }}/desktop/
+
+LABEL Ubuntu Touch Install
+MENU LABEL Ubuntu Touch Install
+KERNEL http://{{ ansible_host }}/OMNI/vmlinuz
+INITRD http://{{ ansible_host }}/OMNI/initrd
+APPEND boot=casper toram netboot=nfs nfsroot={{ ansible_host }}:/var/www/html/Ubuntu_20.04 root=/dev/nfs ro ip=dhcp autoinstall ds=nocloud-net;s=http://{{ ansible_host }}/OMNI/
+LABEL Abort
+MENU LABEL Exit
+KERNEL reboot.c32

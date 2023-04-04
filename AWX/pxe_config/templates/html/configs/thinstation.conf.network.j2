@@ -1,0 +1,47 @@
+SESSION_1_FREERDP_SERVER={{ rds }}
+SESSION_1_FREERDP_OPTIONS="/v:{{ rds }} /d:kifr-ru.local /cert-tofu +clipboard"
+SESSION_1_FREERDP_USER=
+SESSION_1_FREERDP_PASS_ENABLE=true
+LOG_COMMANDS=true
+SESSION_1_TYPE=freerdp
+SESSION__AUTOSTART=on
+
+ALWAYS_ENTER_SERVER=false
+ALLOW_SERVER_EDITS=false
+
+NO_SESSION="shutdown"
+
+AUDIO_LEVEL=90
+MIC_LEVEL=0
+
+NET_USE=BOTH
+NET_USE_DHCP=on
+NET_HOSTNAME=ts_*
+
+TIME_ZONE=Europe/Moscow
+NET_HOSTNAME=733_*
+NET_TIME_SERVER=NTP-D-001.kifr-ru.local
+BIND_MOUNT0="home:/root"
+BIND_MOUNT1="boot:/boot"
+
+USB_STORAGE_SYNC=on
+BASE_MOUNT_PATH=/media
+USB_MOUNT_DIR="."
+#USB_MOUNT_OPTIONS="gid=1000,uid=1000"
+
+GTK_THEME=Adwaita
+ICONS_THEME=Adwaita
+
+CUSTOM_BACKGROUND='http://{{ ansible_host }}/{{ background }}'
+
+
+
+# SESSION_4_TITLE="733"
+# SESSION_4_TYPE=freerdp
+# SESSION_4_AUTOSTART=on
+# SESSION_4_ICON=On
+# FREERDP_SELECT_SERVER=TRUE
+# FREERDP_SERVER_0="rds-d-733"
+# #FREERDP_SERVER_0_OPTIONS="/d:xxx /u:'' /cert-ignore -sec-nla /printer:usb /multimon /smartcard /audio +fonts /gdi:sw /gfx-h264 /drive:USB-FLASH,/media"
+# FREERDP_SERVER_0_OPTIONS="/v:rds-d-733 /u:$(zenity --entry --title="Domain Username" --text="Enter your Username") p:$(zenity --entry --title="Domain Password" --text="Enter_your_password:" --hide-text) /d:KIFR-RU /f /cert-tofu +clipboard"
+# #xfreerdp "/v:rds-d-733 /u:$(zenity --entry --title="Domain Username" --text="Enter your Username") p:$(zenity --entry --title="Domain Password" --text="Enter_your_password:" --hide-text) /d:KIFR-RU /f /cert-tofu +clipboard"

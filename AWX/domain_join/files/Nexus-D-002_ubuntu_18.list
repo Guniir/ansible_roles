@@ -1,0 +1,10 @@
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic main restricted
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-updates main restricted
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic universe
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-updates universe
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic multiverse
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-updates multiverse
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-backports main restricted universe multiverse
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-security main restricted
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-security universe
+deb http://nexus-d-002.kifr-ru.local/repository/Ubuntu_18.04/ bionic-security multiverse

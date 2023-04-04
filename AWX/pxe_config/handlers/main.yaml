@@ -1,0 +1,10 @@
+- name: restart tftpd-hpa
+  service:
+    name: tftpd-hpa
+    state: restarted
+  # command: service tftpd-hpa restart
+- name: restart apache2
+  service:
+    name: apache2
+    state: restarted
+  # command: service apache2 restart

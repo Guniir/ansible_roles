@@ -1,0 +1,7 @@
+TIMEOUT 0
+DEFAULT default
+DISPLAY product.txt
+
+LABEL default
+	KERNEL ::/boot/vmlinuz
+	APPEND initrd=::/boot/initrd  splash=0,theme:default console=tty1 LM=3

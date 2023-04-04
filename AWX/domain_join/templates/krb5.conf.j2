@@ -1,0 +1,32 @@
+# Configuration snippets may be placed in this directory as well
+#includedir /etc/krb5.conf.d/
+includedir /var/lib/sss/pubconf/krb5.include.d/
+
+[logging]
+        default = FILE:/var/log/krb5libs.log
+        kdc = FILE:/var/log/krb5kdc.log
+        admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+        dns_lookup_kdc = false
+        dns_lookup_realm = false
+        ticket_lifetime = 8h
+        renew_lifetime = 7d
+        forwardable = false
+        rdns = false
+        default_ccache_name = KEYRING:persistent:%{uid}
+        default_realm = KIFR-RU.LOCAL
+
+[realms]
+        KIFR-RU.LOCAL = {
+                kdc = dc-d-001.kifr-ru.local
+                kdc = dc-d-002.kifr-ru.local
+                kdc = 710dc001.kifr-ru.local
+                admin_server = dc-d-001.kifr-ru.local
+                default_domain = kifr-ru.local
+        }
+
+
+[domain_realm]
+        kifr-ru.local = KIFR-RU.LOCAL
+        .kifr-ru.local = KIFR-RU.LOCAL

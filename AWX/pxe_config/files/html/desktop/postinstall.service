@@ -1,0 +1,8 @@
+[Unit]
+Description=My custom startup script
+
+[Service]
+ExecStart=/hoff_install/postinstall_ubuntu_desktop.sh start
+
+[Install]
+WantedBy=multi-user.target

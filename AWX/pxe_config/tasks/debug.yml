@@ -1,0 +1,9 @@
+- name: Копируем шаблон user-data html/desktop
+  template:
+    src: "{{ role_path }}/templates/html/desktop/user-data.j2"
+    dest: "/var/www/html/desktop/user-data"
+
+- name: Копируем шаблон postinstall_ubuntu_desktop.sh html/desktop
+  template:
+    src: "{{ role_path }}/templates/html/desktop/postinstall_ubuntu_desktop.sh.j2"
+    dest: "/var/www/html/desktop/postinstall_ubuntu_desktop.sh"

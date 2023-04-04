@@ -1,0 +1,192 @@
+- name: Создаем рабочую директорию /pxe_files
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: svc_7101397@kifr-ru.local
+    group: lsg-gs-adm-linux@kifr-ru.local
+    mode: 0777
+  loop:
+    - /pxe_files/
+    - /pxe_files/data/
+    - /tftp/uefi/menu/
+
+- name: Создаем директорию thinstation/boot и /var/www/html/main_menu/
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    mode: 0775
+  loop:
+    - /var/www/html/thinstation/boot/
+    # - /pxe_files/data/
+    - /var/www/html/main_menu/
+
+
+- name: Создаем директорию html/desktop
+  file:
+    path=/var/www/html/desktop/
+    state=directory
+
+
+- name: Создаем директорию /main_menu
+  file:
+    path=/var/www/html/main_menu
+    state=directory
+
+
+- name: Синхронизируем содержимое директории /var/www/html/
+  synchronize:
+    src: "{{ role_path }}/files/html/"
+    dest: "/pxe_files/html/"
+    delete: yes
+    recursive: yes
+    mode: push
+  vars:
+    ansible_become: false
+
+- name: Синхронизируем каталог /html
+  command: rsync -avu --delete "/pxe_files/html/" "/var/www/html/"
+
+- name: Создаем директорию и /var/www/html/main_menu/
+  file:
+    path=/var/www/html/main_menu/
+    state=directory
+
+- name: Получаем информацию об initrd file
+  stat:
+    path: /pxe_files/data/initrd
+    checksum_algorithm: sha1
+    get_attributes: true
+    get_mime: true
+    get_checksum : true
+  register: initrd
+
+## дебаг работает только при наличии файлов
+## используется для сравнения хеш сумм
+# - name: debug
+#   debug:
+#     msg:
+#       - "{{ initrd.stat.checksum }}"
+#   when: initrd.stat is defined     
+# - name: debug2
+#   debug:
+#     msg:
+#       - "{{ sha1_initrd }}" 
+# - name: debug3
+#   debug:
+#     msg:
+#       - "{{ initrd.stat }}"
+
+- name: Проверяем существование initrd file
+  set_fact:
+    force_new_download: "{{ initrd.stat.checksum != sha1_initrd }}"
+  when: initrd.stat.exists
+
+- name: Скачиваем с nexus initrd file, если не существует или не соответствует хэш 
+  get_url:
+    url: "http://nexus-d-002.kifr-ru.local/repository/PXE/files/initrd"
+    dest: /pxe_files/data/initrd
+    checksum: "sha1:{{ sha1_initrd }}"
+    force:  "{{ force_new_download | default ('false') }}"
+
+- name: Получаем информацию об OMNI ISO
+  stat:
+    path: /pxe_files/data/omni-hoff-touchpanel-20.04-amd64.iso
+    checksum_algorithm: sha1
+    get_attributes: true
+    get_mime: true
+    get_checksum : true
+  register: omni_iso
+
+## дебаг работает только при наличии файлов
+## используется для сравнения хеш сумм
+# - name: debug
+#   debug:
+#     msg:
+#       - "{{ omni_iso.stat.checksum }}" 
+# - name: debug2
+#   debug:
+#     msg:
+#       - "{{ sha1_omni_iso }}" 
+# - name: debug3
+#   debug:
+#     msg:
+#       - "{{ omni_iso.stat }}"
+
+- name: Проверяем существование OMNI ISO
+  set_fact:
+    force_new_download: "{{ omni_iso.stat.checksum != sha1_omni_iso }}"
+  when: omni_iso.stat.exists
+
+- name: Скачиваем с nexus OMNI ISO, если не существует или не соответствует хэш
+  get_url:
+    url: "http://nexus-d-002.kifr-ru.local/repository/PXE/files/omni-hoff-touchpanel-20.04-amd64.iso"
+    dest: /pxe_files/data/omni-hoff-touchpanel-20.04-amd64.iso
+    checksum: "sha1:{{ sha1_omni_iso }}"
+    force:  "{{ force_new_download | default ('false') }}"
+
+- name: Монтируем OMNI ISO  в /mnt
+  command: "mount /pxe_files/data/omni-hoff-touchpanel-20.04-amd64.iso /mnt/"
+
+- name: Копируем содержимое распакованного OMNI ISO в папкку html/Ubuntu_20.04
+  copy:
+    src: "/mnt/"
+    dest: "/var/www/html/Ubuntu_20.04"
+    remote_src: yes
+    directory_mode: yes
+
+- name: Размонтируем ISO
+  command: /bin/umount -f /mnt
+  ignore_errors: True
+
+# - name: Синхронизируем содержимое директории /var/www/html/
+#   synchronize:
+#     src: "{{ role_path }}/files/html/"
+#     dest: "/pxe_files/html/"
+#     delete: yes
+#     recursive: yes
+#     mode: push
+#   vars:
+#     ansible_become: false
+
+
+- name: Синхронизируем файл initrd
+  command: rsync -avu --delete "/pxe_files/data/initrd" "/var/www/html/thinstation/boot/initrd"
+
+
+
+
+
+- name: Копируем шаблон user-data в html/OMNI
+  template:
+    src: "{{ role_path }}/templates/html/OMNI/user-data.j2"
+    dest: "/var/www/html/OMNI/user-data"
+
+- name: Копируем шаблон postinstall.sh в html/OMNI
+  template:
+    src: "{{ role_path }}/templates/html/OMNI/postinstall.sh.j2"
+    dest: "/var/www/html/OMNI/postinstall.sh"
+
+
+- name: Копируем шаблон user-data html/desktop
+  template:
+    src: "{{ role_path }}/templates/html/desktop/user-data.j2"
+    dest: "/var/www/html/desktop/user-data"
+
+- name: Копируем шаблон postinstall_ubuntu_desktop.sh html/desktop
+  template:
+    src: "{{ role_path }}/templates/html/desktop/postinstall_ubuntu_desktop.sh.j2"
+    dest: "/var/www/html/desktop/postinstall_ubuntu_desktop.sh"
+
+
+
+- name: Копируем конфигурационные файлы Apache2 и перезапускаем службу
+  copy:
+    src: "{{ role_path }}/files/apache2/"
+    dest: "/etc/apache2/"
+  notify:
+    - restart apache2
+
+- name: Запускаем NFS
+  command: "exportfs -a"
+

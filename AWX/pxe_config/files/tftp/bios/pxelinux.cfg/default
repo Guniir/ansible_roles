@@ -1,0 +1,32 @@
+UI vesamenu.c32
+ALLOWOPTIONS 0
+PROMPT 0
+TOTALTIMEOUT 5000
+MENU TITLE BIOS Level 1
+MENU AUTOBOOT Starting Local System in 8 seconds
+MENU COLOR border 30;40 #00000000 #00000000 none
+MENU COLOR title 1;36;40 #c00090f0 #00000000 std
+MENU COLOR unsel 37;40 #90ffffff #00000000 std
+MENU COLOR hotkey 1;37;40 #ffffffff #00000000 std
+MENU COLOR sel 7;37;40 #e0000000 #20ff8000 all
+MENU COLOR scrollbar 30;40 #40000000 #00000000 std
+
+# Boot local HDD (default)
+LABEL bootlocal
+MENU LABEL Boot Local
+MENU  default
+localboot 0x80
+# if it doesn't work
+#kernel chain.c32
+#append hd0
+
+
+LABEL 001
+MENU LABEL BIOS Level 2
+MENU PASSWD $4$Ikpym4gY$Wi6BucFQO8irll0PRue5P7JVCio$
+KERNEL vesamenu.c32
+APPEND pxelinux.cfg/main.conf 
+
+LABEL Abort
+MENU LABEL EXIT
+KERNEL reboot.c32

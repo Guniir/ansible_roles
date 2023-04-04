@@ -1,0 +1,2 @@
+- src: git@gitlab.hoff.ru:linux_unix/pxe_config
+  scm: git

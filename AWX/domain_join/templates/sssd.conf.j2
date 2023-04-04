@@ -1,0 +1,24 @@
+[sssd]
+domains = {{ realm_domain }}
+config_file_version = 2
+services = nss, pam
+default_domain_suffix = {{ realm_domain }}
+
+[domain/{{ realm_domain }}]
+default_shell = /bin/bash
+ad_server = dc-d-001.kifr-ru.local,dc-d-002.kifr-ru.local,710dc001.kifr-ru.local
+auth_provider = krb5
+krb5_store_password_if_offline = True
+#cache_credentials = True
+krb5_realm = {{ krb5_default_realm }}
+realmd_tags = manages-system joined-with-adcli
+id_provider = ad
+fallback_homedir = /home/%u@%d
+ad_domain = {{ realm_domain }}
+use_fully_qualified_names = True
+ldap_id_mapping = True
+access_provider = ad
+ad_gpo_access_control = permissive
+ad_gpo_ignore_unreadable = True
+ignore_group_members = True
+krb5_use_enterprise_principal = true

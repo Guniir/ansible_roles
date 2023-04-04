@@ -1,0 +1,14 @@
+---
+- name: test
+  hosts: all
+
+  tasks:
+
+  - command: "date +'%d-%m-%Y' -d '-7 days'"
+    register: result
+  
+  - name: Передаем список в переменную $upgradable_packages
+    set_fact:
+      previous_week: '{{ result.stdout }}'
+
+  - debug: msg="{{ previous_week }}"

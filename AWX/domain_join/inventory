@@ -1,0 +1,75 @@
+linux_hosts:
+  hosts:
+  vars:
+    ungrouped_login_groups:
+      - LSG-GS-ALL-DC-SERVERS-ADM
+    ungrouped_sudo_groups:
+      - LSG-GS-ALL-DC-SERVERS-ADM
+      - LSG-GS-Adm-Linux 
+  children:
+    rocket_servers:
+      vars:
+        rocket_servers_login_groups:
+        rocket_servers_sudo_groups:
+      hosts:
+#        rocket-d-001:
+#        rocket-d-002: огнестенка
+#        rocket-d-004:
+#        rocket-d-005:
+    jitsi_servers:
+      vars:
+        jitsi_servers_login_groups:
+        jitsi_servers_sudo_groups:
+      hosts:
+        # jvb-d-001:
+        # jvb-d-002:
+        # jitsi-recorder:
+        # jitsi-d-001:
+    file_servers:
+      vars:
+        file_servers_login_groups:
+        file_servers_sudo_groups:
+      hosts:
+      # SFTP-D-001: sftp_users logon
+      # bit-d-001:
+    proxy_servers:
+      vars:
+        proxy_servers_login_groups:
+        proxy_servers_sudo_groups:
+      hosts:
+      #etc/squid/имя хостаюkeytab
+        #Proxy-D-104:
+        #Proxy-D-Activ:
+       # Proxy-D-RKN: debian 
+        #aproxy-d-001:
+    utils_servers:
+      vars:
+        utils_servers_login_groups:
+        utils_servers_sudo_groups:
+      hosts:
+        #OO-S-001: debian 
+        #ntp-d-001:
+        #PORT-D-001:
+    docker_servers:
+      vars:
+        docker_servers_login_groups:
+        docker_servers_sudo_groups:
+      hosts:
+        #Docker-D-001:
+    desktop_servers:
+      vars:
+        desktop_servers_login_groups:
+          - GSG-RU-K-710-APP-DEVELOP
+          - LSG-GS-SVC-APP-DEVELOP
+        desktop_servers_sudo_groups:
+          - LSG-GS-SVC-APP-DEVELOP
+      hosts:
+#        dev-s-008:
+#        dev-s-009:
+    reports_servers:
+      vars:
+        reports_servers_login_groups:
+          - LSG-GS-SVC-APP-DEVELOP
+        reports_servers_sudo_groups:
+      hosts:
+        rss-d-001:

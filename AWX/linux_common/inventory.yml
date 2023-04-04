@@ -1,0 +1,8 @@
+all:
+  vars:
+    ansible_connection: ssh
+    ansible_become: yes
+    ansible_user: itadmin_develop
+  hosts:
+    rss-d-001:
+    ds-d-001:

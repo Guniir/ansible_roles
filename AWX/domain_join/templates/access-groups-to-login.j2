@@ -1,0 +1,6 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+sudo
+root
+{% for logingroup in logingroups %}
+{{ logingroup }}
+{% endfor %}

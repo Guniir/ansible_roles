@@ -1,0 +1,26 @@
+- name: Устанавливаем snmpd
+  apt:
+    state: present
+    pkg:
+      - snmpd
+- name: Бэкапим оригинальный snmpd.conf
+  copy: 
+    remote_src: true
+    src: /etc/snmp/snmpd.conf
+    dest: /etc/snmp/snmpd.conf.orig
+    force: no
+- name: Засылаем новый snmpd.conf
+  template:
+    src: "{{ role_path }}/templates/snmpd_conf.j2"
+    dest: /etc/snmp/snmpd.conf
+  notify:
+    - restart snmpd
+- name: Запихиваем конфиг rsyslog для snmpd
+  copy:
+    src: "{{ role_path }}/files/rsyslog-snmp.conf"
+    dest: /etc/rsyslog.d/11-snmpd.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart rsyslog service

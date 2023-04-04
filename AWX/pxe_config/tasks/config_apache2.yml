@@ -1,0 +1,61 @@
+- name: Создаем рабочую директорию /pxe_files
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: svc_7101397@kifr-ru.local
+    group: lsg-gs-adm-linux@kifr-ru.local
+    mode: 0777
+  loop:
+    - /pxe_files/
+    - /pxe_files/data/
+    - /tftp/uefi/menu/
+
+- name: Синхронизируем содержимое директории /var/www/html/
+  synchronize:
+    src: "{{ role_path }}/files/html/"
+    dest: "/pxe_files/html/"
+    delete: yes
+    recursive: yes
+    mode: push
+  vars:
+    ansible_become: false
+
+- name: Синхронизируем каталог /html
+  command: rsync -avu --delete "/pxe_files/html/" "/var/www/html/"
+
+- name: Копируем шаблон user-data в html/OMNI
+  template:
+    src: "{{ role_path }}/templates/html/OMNI/user-data.j2"
+    dest: "/var/www/html/OMNI/user-data"
+
+- name: Копируем шаблон postinstall.sh в html/OMNI
+  template:
+    src: "{{ role_path }}/templates/html/OMNI/postinstall.sh.j2"
+    dest: "/var/www/html/OMNI/postinstall.sh"
+
+- name: Создаем директорию html/desktop
+  file:
+    path=/var/www/html/desktop/
+    state=directory
+
+- name: Копируем шаблон user-data html/desktop
+  template:
+    src: "{{ role_path }}/templates/html/desktop/user-data.j2"
+    dest: "/var/www/html/desktop/user-data"
+
+- name: Копируем шаблон postinstall.sh html/desktop
+  template:
+    src: "{{ role_path }}/templates/html/desktop/postinstall.sh.j2"
+    dest: "/var/www/html/desktop/postinstall.sh"
+
+- name: Создаем директорию /main_menu
+  file:
+    path=/var/www/html/main_menu
+    state=directory
+
+- name: Копируем конфигурационные файлы Apache2 и перезапускаем службу
+  copy:
+    src: "{{ role_path }}/files/apache2/"
+    dest: "/etc/apache2/"
+  notify:
+    - restart apache2

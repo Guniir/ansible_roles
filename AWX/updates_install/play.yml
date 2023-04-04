@@ -1,0 +1,8 @@
+---
+- name: Установка обновлений
+  hosts: all
+  become: true
+  become_user: root
+
+  roles:
+    - updates_install

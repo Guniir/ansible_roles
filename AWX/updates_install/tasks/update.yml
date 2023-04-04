@@ -1,0 +1,169 @@
+---
+
+- name: Генерим дату в удобном нам формате СЕГОДНЯ FAST
+  command: "date '+%d-%m-%Y'"
+  register: today
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- name: Передаем сгенерированную дату в переменную  $today FAST
+  set_fact:
+    current_day: '{{ today.stdout }}'
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- debug: msg="{{ current_day }}"
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- name: Генерим дату в удобном нам формате НЕДЛЮ НАЗАД SLOW1
+  command: "date '+%d-%m-%Y' -d '- 7 days'"
+  register: previous_week_1
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- name: Передаем сгенерированную дату в переменную  $previous_week_1 SLOW1
+  set_fact:
+    previous_week_1: '{{ previous_week_1.stdout }}'
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- debug: msg="{{ previous_week_1 }}"
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- name: Генерим дату в удобном нам формате НЕДЛЮНАЗАД +1 ДЕНЬ SLOW2
+  command: "date '+%d-%m-%Y' -d '- 8 days'"
+  register: previous_week_2
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+- name: Передаем список в переменную $previous_week_2 SLOW2
+  set_fact:
+    previous_week_2: '{{ previous_week_2.stdout }}'
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+- debug: msg="{{ previous_week_2 }}"
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+- name: Скачиваем packages_names_versions.txt с Nexus-D-002 для каждого сервера FAST
+  uri:
+    url: "http://nexus-d-002.kifr-ru.local/repository/update_lists/{{ current_day }}/{{ inventory_hostname_short }}_packages_names_versions"
+    dest: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- name: Скачиваем packages_names_versions.txt с Nexus-D-002 для каждого сервера SLOW1
+  uri:
+    url: "http://nexus-d-002.kifr-ru.local/repository/update_lists/{{ previous_week_1 }}/{{ inventory_hostname_short }}_packages_names_versions"
+    dest: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- name: Скачиваем packages_names_versions.txt с Nexus-D-002 для каждого сервера SLOW2
+  uri:
+    url: "http://nexus-d-002.kifr-ru.local/repository/update_lists/{{ previous_week_2 }}/{{ inventory_hostname_short }}_packages_names_versions"
+    dest: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+- name: Забираем из файла список FAST
+  slurp:
+    src: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  register: packages_names_versions_encoded
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- name: Забираем из файла список SLOW1
+  slurp:
+    src: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  register: packages_names_versions_encoded
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- name: Забираем из файла список SLOW2
+  slurp:
+    src: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  register: packages_names_versions_encoded
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+- name: Создаем переменную FAST
+  set_fact:
+    packages_names_versions_downloaded: "{{ packages_names_versions_encoded.content | b64decode }}"
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- name: Создаем переменную SLOW1
+  set_fact:
+    packages_names_versions_downloaded: "{{ packages_names_versions_encoded.content | b64decode }}"
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- name: Создаем переменную SLOW2
+  set_fact:
+    packages_names_versions_downloaded: "{{ packages_names_versions_encoded.content | b64decode }}"
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+- debug:
+    msg: '{{ packages_names_versions_downloaded }}'
+  when: update_ring == 'fast'
+  tags: 
+    - fast
+
+- debug:
+    msg: '{{ packages_names_versions_downloaded }}'
+  when: update_ring == 'slow1'
+  tags: 
+    - slow1
+
+- debug:
+    msg: '{{ packages_names_versions_downloaded }}'
+  when: update_ring == 'slow2'
+  tags: 
+    - slow2
+
+
+# - name: Скачиваем и обновляем пакеты
+#   apt: 
+#     update_cache: yes
+#     name: "{{ upgradable_packages }}"
+#     state: latest
+
+# - apt: 
+#     name: "{{ item }}"
+#     state: latest
+#   when: >
+#     item != 'linux-base' and 
+#     item != 'linux-firmware' and 
+#     item != 'linux-generic' and 
+#     item != 'linux-headers-generic' and
+#     item != 'linux-image-generic' and 
+#     item != 'netplan.io' and 
+#     item != 'ubuntu-advantage-tools' and 
+#     item != 'ubuntu-keyring' and 
+#     item != 'ubuntu-release-upgrader-core' and 
+#     item != 'ubuntu-server' and 
+#     item != 'ubuntu-standard'
+#   loop: "{{ upgradable_packages }}"

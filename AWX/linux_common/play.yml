@@ -1,0 +1,11 @@
+---
+- name: Какой-то минимальный стандарт
+  hosts: all
+  become: true
+  become_user: root
+  
+  # pre_tasks:
+  #   - debug: var=create_users
+
+  roles:
+    - linux_common

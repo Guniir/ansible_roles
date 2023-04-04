@@ -1,0 +1,40 @@
+---
+
+- name: Генерим дату в удобном нам формате СЕГОДНЯ SLOW2
+  command: "date +'%d-%m-%Y' -d '-8 days'"
+  register: today
+
+- name: Передаем сгенерированную дату в переменную  $today SLOW2
+  set_fact:
+    current_day: '{{ today.stdout }}'
+
+- debug: msg="{{ current_day }}"
+
+- name: Скачиваем packages_names_versions.txt с Nexus-D-002 для каждого сервера SLOW2
+  uri:
+    url: "http://nexus-d-002.kifr-ru.local/repository/update_lists/find_updates/{{ current_day }}/{{ inventory_hostname_short }}"
+    dest: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+
+- name: Забираем из файла список SLOW2
+  slurp:
+    src: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+  register: packages_names_versions_encoded
+
+- name: Создаем переменную SLOW2
+  set_fact:
+    packages_names_versions_downloaded: "{{ packages_names_versions_encoded.content | b64decode }}"
+
+- name: Удалем мусор после себя
+  file:
+    path: "/tmp/{{ inventory_hostname_short }}_packages_names_versions.txt"
+    state: absent
+
+# - debug:
+#     msg: '{{ packages_names_versions_downloaded }}'
+
+- name: Устанавливаем обновления из списка
+  apt: 
+    name: "{{ item }}"
+    state: present
+  loop: "{{ packages_names_versions_downloaded }}"
+  ignore_errors: yes

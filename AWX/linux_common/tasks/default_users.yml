@@ -1,0 +1,31 @@
+- name: Создаём пользователя itadmin_develop (Deb/Ubuntu)
+  user:
+    append: true
+    update_password: always
+    name: itadmin_develop
+    password: '$6$omJVlgdNifjdYJ5d$jobwlnDIivxBioAJN1CHRFMdQ9lu0pMGruNdhvMRWLegOqrRA9WjxtfUTRHN8ji3HpQ9oZkUDXcHX0fvtP6B7/'
+    shell: /bin/bash
+    groups: sudo
+    create_home: true
+  when:
+    - os_distrib in [ 'debian', 'ubuntu' ]
+
+- name: Создаём пользователя itadmin_develop (CentOS)
+  user:
+    append: true
+    update_password: always
+    name: itadmin_develop
+    password: '$6$omJVlgdNifjdYJ5d$jobwlnDIivxBioAJN1CHRFMdQ9lu0pMGruNdhvMRWLegOqrRA9WjxtfUTRHN8ji3HpQ9oZkUDXcHX0fvtP6B7/'
+    shell: /bin/bash
+    groups: sudo
+    create_home: true
+  when:
+    - os_distrib in [ 'centos' ]
+
+- name: Применяем пароль рута
+  user:
+    append: true
+    update_password: always
+    name: root
+    password: '$6$ASdhb2CfnUNuJWIh$NPrhlOvATc2wlU5h/ILlcephX6YCbvMUt/R0Py8dOY3zpwOvtN/tvpiFRkYuB.fxrKpcSyKMDEuvwG63ApGFf/'
+    create_home: true

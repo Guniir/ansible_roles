@@ -1,0 +1,44 @@
+pxe_hosts:
+  vars:
+    ansible_connection: ssh
+    ansible_become: true
+    background: 'configs/backgrounds/apu2.jpg'
+  children:
+    pxe_test:
+      vars:
+      hosts:
+        806Pxe.kifr-ru.local:
+          sccm_dp: 806ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.80.15.13
+          rds: rds-d-806.kifr-ru.local
+    pxe_prod:
+      vars:
+      hosts:
+        713Apt-Cache.kifr-ru.local:
+          sccm_dp: 713ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.71.3.13
+          rds: rds-d-713.kifr-ru.local
+        715Apt-Cache.kifr-ru.local:
+          sccm_dp: 715ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.71.5.13
+          rds: rds-d-715.kifr-ru.local
+        732Apt-Cache.kifr-ru.local:
+          sccm_dp: 732ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.71.22.13
+          rds: rds-d-732.kifr-ru.local
+        733Apt-Cache.kifr-ru.local:
+          sccm_dp: 733ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.71.23.13
+          rds: rds-d-733.kifr-ru.local
+        810Apt-Cache.kifr-ru.local:
+          sccm_dp: 810ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.80.10.13
+          rds: rds-d-810.kifr-ru.local
+        815Apt-Cache.kifr-ru.local:
+          sccm_dp: 815ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.80.15.13
+          rds: rds-d-815.kifr-ru.local
+        806Apt-Cache.kifr-ru.local:
+          sccm_dp: 806ws-dp.kifr-ru.local
+          Apt_Cache_Ip: 10.80.15.13
+          rds: rds-d-806.kifr-ru.local

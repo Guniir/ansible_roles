@@ -1,0 +1,81 @@
+---
+
+- name: Load Secrets
+  include_vars: "secrets.yml"
+
+- name: Обновляем список пакетов
+  apt:
+    update_cache: yes
+
+- name: Получаем список пакетов которые необходимо обновить
+  shell: apt list --upgradable
+  register: list_upgradable
+
+# - debug:
+#     msg: '{{ list_upgradable }}'
+
+- name: Передаем список в переменную $upgradable_packages
+  set_fact:
+    packages_names: "{{ list_upgradable.stdout | regex_findall('(^.+)\\/', multiline=True) }}"
+  no_log: true
+
+# - debug:
+#     msg: '{{ packages_names }}'
+
+- name: Получаем версии пакетов которые необходимо обновить
+  shell: apt-cache policy "{{ item }}"
+  loop: '{{ packages_names }}'
+  register: packages_info
+  no_log: true
+
+- name: Передаем список в переменную $packages_names_versions
+  set_fact:
+    packages_names_versions: "{{ packages_names_versions | default([]) + [ item.stdout_lines[0] | regex_replace(':','=') + __tmp_version  ] }}"
+  vars:
+    __tmp_version: "{{ item.stdout_lines[2] | regex_replace('^ *Candidate: *(.+?)$','\\1') }}"
+  no_log: true
+  loop: "{{ packages_info.results }}"
+
+- name: Remove Duplicates and NULL
+  set_fact:
+    packages_names_versions: "{{ packages_names_versions | unique | select | list }}"
+
+# - debug:
+#     msg: '{{ packages_names_versions }}'
+
+- name: Сохраняем список пакетов в файл
+  copy:
+    content:  "{{ packages_names_versions }}"
+    dest: /tmp/packages_names_versions.txt
+  delegate_to: "{{  ansible_host  }}"
+
+- name: Генерим дату в удобном нам формате
+  command: "date '+%d-%m-%Y'"
+  register: today
+
+- name: Передаем дату в переменную $current_day
+  set_fact:
+    current_day: '{{ today.stdout }}'
+
+- debug: msg="{{ current_day }}"
+
+- name: Выгружаем packages_names_versions.txt на Nexus-D-002
+  uri:
+    url: "http://nexus-d-002.kifr-ru.local/repository/update_lists/find_updates/{{ current_day }}/{{ inventory_hostname_short }}"
+    method: PUT
+    remote_src: yes
+    src: "/tmp/packages_names_versions.txt"
+    user: '{{ AWX_user }}'
+    password: '{{ AWX_password }}'
+    force_basic_auth: yes
+    headers:
+      Content-Type: application/octet-stream  # To avoid automatic 'application/x-www-form-urlencoded'
+    status_code:
+      - 201
+  # no_log: true
+  # loop: "{{ inventory_hostname_short }}"
+
+- name: Удалем мусор после себя
+  file:
+    path: "/tmp/packages_names_versions.txt"
+    state: absent

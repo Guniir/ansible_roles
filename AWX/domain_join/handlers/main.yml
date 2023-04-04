@@ -1,0 +1,18 @@
+---
+# handlers file for domain_join
+- name: Reload service
+  become: yes
+  service:
+    name: "sssd.service"
+    state: restarted
+
+- name: restart snmpd
+  service:
+    name: snmpd
+    state: restarted
+    enabled: yes
+
+- name: restart rsyslog service
+  service:
+    name: rsyslog
+    state: restarted

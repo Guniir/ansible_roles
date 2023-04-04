@@ -1,0 +1,5 @@
+---
+# tasks file for domain_join
+- name: Роль присоединения Linux к AD
+  include_tasks:
+    file: "{{ role_path }}/tasks/domain_join.yml"

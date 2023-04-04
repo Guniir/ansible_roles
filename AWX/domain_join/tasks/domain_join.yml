@@ -1,0 +1,171 @@
+---
+# tasks that run after a new deployment
+
+- name: Load Secrets
+  include_vars: "secrets.yml"
+
+- name: Load Variables
+  include_vars: "vars.yml"
+
+# - name: Copy nexus-apt
+#   template: 
+#     src: apt-source.j2
+#     dest: /etc/apt/sources.list.d/Nexus-D-002.list
+#     owner: root
+#     group: root
+#     mode: 0644
+
+- name: sudo collecting
+  set_fact:
+    sudogroups: "{{ sudogroups + lookup('vars', item + '_sudo_groups') }}"
+  loop: "{{ group_names }}"
+    
+- name: login collecting
+  set_fact:
+    logingroups: "{{ logingroups + lookup('vars', item + '_sudo_groups') + lookup('vars', item + '_login_groups') }}"
+  loop: "{{ group_names }}"
+
+- name: Remove Duplicates and NULL
+  set_fact:
+    logingroups: "{{ logingroups | unique | select | list }}"
+    sudogroups: "{{ sudogroups | unique | select | list }}"
+
+- debug:
+    msg: '{{ logingroups }}'
+
+- debug:
+    msg: '{{ sudogroups }}'
+
+- name: Install AD Domain packages
+  apt: 
+    name: "{{ item }}"
+    state: present 
+    update_cache: yes
+  with_items:
+    - realmd
+    - sssd
+    - adcli
+    - krb5-user
+    - sssd-tools
+    - packagekit
+    - ntp
+    - ntpdate
+    - ntpstat
+  become: true
+  #ignore_errors: yes
+  tags: ad
+
+- name: NTP service STOP
+  service:
+    name: ntp
+    state: stopped
+
+- name: Copy ntp.conf
+  copy:
+    src: "{{ role_path }}/files/ntp.conf"
+    dest: /etc/ntp.conf
+
+- name: NTP service START
+  service:
+    name: ntp
+    state: started
+
+- name: Copy realmd.conf
+  template: 
+    src: realmd.conf.j2
+    dest: /etc/realmd.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags: ad
+
+- name: Copy krb5.conf
+  template: 
+    src: krb5.conf.j2
+    dest: /etc/krb5.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: 0644
+  tags: ad
+
+- name: Discover realm
+  command: /bin/bash -c "/usr/sbin/realm discover {{ realm_domain }}"
+  register: realm_discover_results
+  tags: ad
+
+- name: Discover realm debug
+  debug: 
+    msg: "{{ realm_discover_results.stdout }}"
+
+- name: Create kerberos ticket
+  command: /bin/bash -c "echo '{{ password }}' | /usr/bin/kinit -V {{ kerberos_user }}"
+
+# Check for existing AD
+- name: Checking to see if system is already joined to AD
+  command: /bin/bash -c "/usr/sbin/realm list"
+  register: realm_list_results
+  tags: ad
+
+- name: Debug realm_list_results
+  debug:
+    msg: "{{ realm_list_results.stdout }}"
+
+- name: Join system to AD
+  command: /bin/bash -c "echo '{{ password }}' | /usr/sbin/realm join --user={{ ad_user }} --user-principal="host/{{ inventory_hostname }}@{{krb5_default_realm}}" dc-d-001.kifr-ru.local"
+  when: realm_list_results.stdout == ""
+  become: true
+  tags: ad
+
+- name: Pause for 1 minutes 
+  pause:
+    minutes: 1
+
+- name: Copy access-groups-to-login
+  template: 
+    src: access-groups-to-login.j2
+    dest: /etc/security/access-groups-to-login
+    owner: root
+    group: root
+    mode: 0644
+  tags: ad
+
+- name: Copy sudo
+  template: 
+    src: sudo.j2
+    dest: /etc/sudoers.d/groupdomain
+    owner: root
+    group: root
+    mode: 0644
+  tags: ad
+
+- name: Copy sssd.conf
+  template:
+    src: sssd.conf.j2
+    dest: /etc/sssd/sssd.conf
+    owner: root
+    group: root
+    mode: 0600
+  notify: Reload service
+  tags: ad
+
+- name: Copy pam common-session
+  template: 
+    src: common-session.j2
+    dest: /etc/pam.d/common-session
+    owner: root
+    group: root
+    mode: 0644
+  tags: ad
+
+- name: Copy pam common-auth
+  template: 
+    src: common-auth.j2
+    dest: /etc/pam.d/common-auth
+    owner: root
+    group: root
+    mode: 0644
+  tags: ad
+
+- name: Enable automatic RegisterDNS
+  command: "hostnamectl set-hostname {{ inventory_hostname }}.kifr-ru.local"

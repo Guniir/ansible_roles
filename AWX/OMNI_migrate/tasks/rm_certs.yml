@@ -1,0 +1,27 @@
+---
+
+- name: Останавливаем puppet
+  service:
+    name: puppet
+    state: stopped
+
+- name: Удаляем папку SSL при рестарте она создастся заново 
+  file:
+    path: "/var/lib/puppet/ssl/"
+    state: absent
+
+- name: Запускаем puppet
+  service:
+    name: puppet
+    state: started
+
+- name: Принудительно обратимся к серверу
+  command: "/opt/puppetlabs/bin/puppet agent -t"
+
+- name: Очистим все сертификаты
+  command: "/opt/puppetlabs/bin/puppet cert clean -all"
+
+- name: Запускаем puppet
+  service:
+    name: puppet
+    state: restarted

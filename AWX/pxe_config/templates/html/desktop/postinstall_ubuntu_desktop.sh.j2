@@ -1,0 +1,286 @@
+#!/bin/bash
+unset DEBCONF_REDIR
+unset DEBCONF_FRONTEND
+unset DEBIAN_HAS_FRONTEND
+unset DEBIAN_FRONTEND
+export DEBIAN_FRONTEND=noninteractive
+HOFF_INSTALL=/hoff_install/
+NETIFACE=`ip addr | grep -m 1 enp | cut -f 2 -d : | cut -f 2 -d " "`
+
+# # Устанавливаем cntlm
+# echo "=============================== Устанавливаем cntlm ======================================="
+# # dpkg -i $HOFF_INSTALL/c/cntlm_0.92.3-1ubuntu2_amd64.deb
+dpkg -i $HOFF_INSTALL/p/puppet5-release-bionic.deb
+
+# # Настройка cntlm.conf
+# echo "=============================== Настройка cntlm.conf ======================================="
+# cp -r /hoff_install/cntlm.conf /etc/cntlm.conf
+# chmod 600 /etc/cntlm.conf
+# chown root:root
+
+#Добавляем прокси в apt
+#echo "=============================== Добавляем прокси в apt ======================================="
+echo 'Acquire::http::Proxy "http://{{ ansible_host }}:3142/";' > /etc/apt/apt.conf
+echo 'Acquire::https::Proxy "http://{{ ansible_host }}:3142/";' >> /etc/apt/apt.conf.d/proxy.conf
+service cntlm restart
+
+# Устанавливаем ubuntu-desktop
+apt-get -y -q update
+apt --fix-broken install -y -q
+apt-get -y -q install ubuntu-desktop
+
+# Устанавливаем пакеты
+echo "=============================== Устанавливаем пакеты ======================================="
+
+apt-get -y -q install mplayer
+apt-get -y -q install lftp
+apt-get -y -q install ssh
+apt-get -y -q install xscreensaver xscreensaver-data xscreensaver-gl
+# apt-get -y -q install xbacklight
+apt-get -y -q install conky-all
+apt-get -y -q install x11vnc
+apt-get -y -q install puppet-agent
+apt-get -y -q install cups
+apt-get -y -q install fonts-liberation
+apt-get -y -q purge gnome-screensaver
+# apt-get -y -q install supervisor
+apt-get install -q -y lightdm
+# apt-get remove gnome-shell-extension-ubuntu-dock -y
+# apt-get install -q -y gnome-shell-extensions
+# apt-get install -q -y gnome-shell-extension-dash-to-panel
+# apt-get install -q -y dconf-editor
+
+# Устанавливаем google-chrome
+echo "=============================== Устанавливаем google-chrome ======================================="
+dpkg -i $HOFF_INSTALL/g/google-chrome-stable_current_amd64.deb
+apt --fix-broken install -y -q
+apt-get upgrade -y -q
+# service cntlm stop
+
+# Настраиваем puppet 
+echo "=============================== Настраиваем puppet ======================================="
+chmod 777 /etc/puppetlabs/puppet/puppet.conf
+cp /etc/puppetlabs/puppet/puppet.conf /tmp/
+echo -e "[main]\n\tlogdir=/var/log/puppet\n\tvardir=/var/lib/puppet\n\tssldir=/var/lib/puppet/ssl\n\trundir=/var/run/puppet\n\tfactpath=$vardir/lib/facter\n[agent]\n\tserver = ppt-d-001.kifr-ru.local" > /tmp/puppet.conf
+chmod 644 /tmp/puppet.conf
+cp /tmp/puppet.conf /etc/puppetlabs/puppet/puppet.conf
+systemctl enable puppet.service
+
+# # Отключаем ввод пароля sudo
+# echo "=============================== Отключаем ввод пароля sudo ======================================="
+# chmod 666 /etc/sudoers
+# cp /etc/sudoers /tmp/
+# sed -i '/%sudo/s/ALL=(ALL:ALL) ALL/ALL=(ALL:ALL) NOPASSWD:ALL/' /tmp/sudoers
+# mv /tmp/sudoers /etc/
+# chmod 440 /etc/sudoers
+
+# Отключаем IPv6
+echo "=============================== Отключаем IPv6 ======================================="
+echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/99-sysctl.conf
+echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/99-sysctl.conf
+echo "net.ipv6.conf.${NETIFACE}.disable_ipv6 = 1" >> /etc/sysctl.d/99-sysctl.conf
+echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.d/99-sysctl.conf
+
+# Отключаем DUID
+echo "=============================== Отключаем DUID ======================================="
+touch /etc/systemd/network/10-dhcp.network
+echo "[Match]" > /etc/systemd/network/10-dhcp.network
+echo "Name=*" >> /etc/systemd/network/10-dhcp.network
+echo "[Network]" >> /etc/systemd/network/10-dhcp.network
+echo "DHCP=ipv4" >> /etc/systemd/network/10-dhcp.network
+echo "[DHCP]" >> /etc/systemd/network/10-dhcp.network
+echo "ClientIdentifier=mac" >> /etc/systemd/network/10-dhcp.network
+chown root:root /etc/systemd/network/10-dhcp.network
+chmod 644 /etc/systemd/network/10-dhcp.network
+
+# # Avahi отключаем ipv4 и ipv6
+# echo "=============================== Avahi отключаем ipv4 и ipv6 ======================================="
+# chmod 666 /etc/avahi/avahi-daemon.conf
+# cp /etc/avahi/avahi-daemon.conf /tmp
+# chmod 666 /etc/default/avahi-daemon
+# cp /etc/default/avahi-daemon /tmp
+# sed -i 's/use-ipv4=yes/use-ipv4=no/' /tmp/avahi-daemon.conf
+# sed -i 's/use-ipv6=yes/use-ipv6=no/' /tmp/avahi-daemon.conf
+# sed -i 's/AVAHI_DAEMON_DETECT_LOCAL=1/AVAHI_DAEMON_DETECT_LOCAL=0/' /tmp/avahi-daemon
+# mv /tmp/avahi-daemon.conf /etc/avahi
+# chmod 644 /etc/avahi/avahi-daemon.conf
+# mv /tmp/avahi-daemon /etc/default
+# chmod 644 /etc/default/avahi-daemon
+
+# Перенастраиваем resolv
+echo "=============================== Перенастраиваем resolv ======================================="
+chmod 666 /etc/systemd/resolved.conf
+cp /etc/systemd/resolved.conf /tmp
+sed -i 's/#DNS=/DNS=10.71.224.161 10.71.224.162/' /tmp/resolved.conf
+sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /tmp/resolved.conf
+sed -i 's/#Domains=/Domains=kifr-ru.local/' /tmp/resolved.conf
+sed -i 's/#NTP=/NTP=ntp-d-001.kifr-ru.local/' /tmp/resolved.conf
+mv /tmp/resolved.conf /etc/systemd
+chmod 644 /etc/systemd/resolved.conf
+
+# NTP
+echo "=============================== Настраиваем NTP ======================================="
+chmod 666 /etc/systemd/timesyncd.conf
+cp /etc/systemd/timesyncd.conf /tmp
+sed -i '/#NTP/s/#//;/^NTP/s/$/ntp-d-001.kifr-ru.local/;' /tmp/timesyncd.conf
+mv /tmp/timesyncd.conf /etc/systemd/
+chmod 644 /etc/systemd/timesyncd.conf
+
+# Перенастраиваем resolv.conf на systemd
+echo "=============================== Перенастраиваем resolv.conf на systemd ======================================="
+rm -f /etc/resolv.conf
+ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
+# Отключаем avahi-daemon
+echo "=============================== Отключаем avahi-daemon ======================================="
+# systemctl disable avahi-daemon
+
+# Устанавливаем поддержку языка
+echo "=============================== Устанавливаем поддержку языка ======================================="
+update-locale LANG=ru_RU.UTF-8
+update-locale LANGUAGE=ru
+
+# Копируем файлы для автозапуска vnc
+echo "=============================== Копируем файлы для автозапуска vnc ======================================="
+cp $HOFF_INSTALL/x11vnc.service /lib/systemd/system/
+cp $HOFF_INSTALL/x11vnc.pass /etc/
+systemctl enable x11vnc.service
+
+# # Создаем пользователя kiosk
+# echo "=============================== Создаем пользователя kiosk ======================================="
+# groupadd autologin
+# useradd -c "Стандартный пользователь киоска" -d /home/kiosk -m -G autologin,lpadmin -N -s /bin/bash -p '$6$XjtAKamf$uW6sCFRVIIO0eVbeLOHruO4euzu8K.0u9JotA7ym173bc0HTXHHgqVHOg1Bj4JMWaIhpD6ghNGgOOlZELzrsy.' kiosk
+# mkdir /home/kiosk/.config
+
+# # Скрываем приветственное окно
+# echo "yes" > /home/kiosk/.config/gnome-initial-setup-done
+
+# Заменяем gdm на lightdm
+echo "=============================== Заменяем gdm на lightdm ======================================="
+echo "/usr/sbin/lightdm" > /etc/X11/default-display-manager
+DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true dpkg-reconfigure lightdm
+echo set shared/default-x-display-manager lightdm | debconf-communicate
+
+# # Выполняем настройки автоматического входа в систему для пользователя kiosk
+# echo "============= Выполняем настройки автоматического входа в систему для пользователя kiosk =============="
+# touch /tmp/lightdm.conf
+# echo "[Seat:*]" > /tmp/lightdm.conf
+# echo "greeter-allow-guest=false" >> /tmp/lightdm.conf
+# echo "allow-guest=false" >> /tmp/lightdm.conf
+# echo "pam-service=lightdm" >> /tmp/lightdm.conf
+# echo "pam-autologin-service=lightdm-autologin" >> /tmp/lightdm.conf
+# echo "autologin-user=kiosk" >> /tmp/lightdm.conf
+# echo "autologin-user-timeout=0" >> /tmp/lightdm.conf
+# echo "user-session=ubuntu" >> /tmp/lightdm.conf
+# cp /tmp/lightdm.conf /etc/lightdm/
+# chmod 644 /etc/lightdm/lightdm.conf
+# chown root:root /etc/lightdm/lightdm.conf
+
+# Скрываем администратора в окне входа в систему
+echo "================== Скрываем администратора в окне входа в систему ======================="
+chmod 666 /etc/lightdm/users.conf
+cp /etc/lightdm/users.conf /tmp/
+sed -i '/hidden-users/s/noaccess/noaccess administrator/' /tmp/users.conf
+mv /tmp/users.conf /etc/lightdm/
+chmod 644 /etc/lightdm/users.conf
+touch /var/lib/AccountsService/users/administrator
+echo "[User]" >> /var/lib/AccountsService/users/administrator
+echo "SystemAccount=true" >> /var/lib/AccountsService/users/administrator
+chmod 644 /var/lib/AccountsService/users/administrator
+chown root:root /var/lib/AccountsService/users/administrator
+
+# Создаем каталоги
+echo "=============================== Создаем каталоги ======================================="
+mkdir -p /etc/skel/.config/autostart
+mkdir -p /etc/skel/.local/share/fonts
+mkdir -p /etc/skel/Изображения/wallpaper
+mkdir -p /etc/skel/.config/systemd/user/default.target.wants/
+mkdir -p /etc/skel/.omni
+mkdir -p /etc/skel/.config/openbox/
+mkdir -p /etc/skel/.config/google-chrome/Default/Extensions
+
+# Копируем фоновое изображение рабочего стола и картинки для слайдшоу
+echo "================ Копируем фоновое изображение рабочего стола и картинки для слайдшоу =================="
+cp $HOFF_INSTALL/wallpaper_hoff.jpg /etc/skel/Изображения/wallpaper/
+cp -R $HOFF_INSTALL/slideshow /etc/skel/Изображения/
+
+Добавляем настройки xscreensaver
+echo "=============================== Добавляем настройки xscreensaver ======================================="
+cat $HOFF_INSTALL/xscreensaver > /etc/skel/.xscreensaver
+chmod 744 /etc/skel/.xscreensaver
+sed -i 's/xscreensaver/\/usr\/bin\/xscreensaver -no-splash\nEnvironment=DISPLAY=:0/' /usr/lib/systemd/user/xscreensaver.service
+ln -s /usr/lib/systemd/user/xscreensaver.service /etc/skel/.config/systemd/user/default.target.wants
+
+# Копируем настройки conky и шрифт
+echo "=============================== Копируем настройки conky и шрифт ======================================="
+cp $HOFF_INSTALL/conky/conky.desktop /etc/skel/.config/autostart/
+sed -i "s/enp2s0/${NETIFACE}/" $HOFF_INSTALL/conky/Gotham/Gotham
+cat $HOFF_INSTALL/conky/Gotham/Gotham > /etc/skel/.conkyrc
+
+# # Настраиваем google-chrome
+# echo "=============================== Настраиваем google-chrome ======================================="
+# tar -xf $HOFF_INSTALL/extensions/NavigationInjector.tar.gz -C /home/kiosk/
+# tar -xf $HOFF_INSTALL/extensions/IdleReset.tar.gz -C /home/kiosk/
+# tar -xf $HOFF_INSTALL/extensions/VirtualKeyboard.tar.gz -C /home/kiosk/
+# tar -xf $HOFF_INSTALL/extensions/Extenstions.tar.gz -C /home/kiosk/.config/google-chrome/Default/
+# cp -R $HOFF_INSTALL/extensions/keyboard /home/kiosk/
+# cp $HOFF_INSTALL/extensions/Preferences /home/kiosk/.config/google-chrome/Default/
+# ln -s /etc/alternatives/x-www-browser /usr/bin/google-chrome-stable
+
+# # Настройки lftp
+# echo "=============================== Настройки lftp ======================================="
+# touch /home/kiosk/.lftprc
+# echo "set net:connection-limit 0" >> /home/kiosk/.lftprc
+# echo "set net:limit-rate 102400" >> /home/kiosk/.lftprc
+# echo "set net:max-retries 50" >> /home/kiosk/.lftprc
+# echo "set net:reconnect-interval-base 300" >> /home/kiosk/.lftprc
+# echo "set net:reconnect-interval-multiplier 1" >> /home/kiosk/.lftprc
+# chmod +w /home/kiosk/.lftprc
+
+# # Настраиваем supervisor
+# echo "=============================== Настраиваем supervisor ======================================="
+# cp /hoff_install/googlechrome.conf /etc/supervisor/conf.d/googlechrome.conf
+# chmod 644 /etc/supervisor/conf.d/googlechrome.conf
+# chown root:root /etc/supervisor/conf.d/googlechrome.conf
+
+# # Задания для выключения подсветки дисплея
+# echo "=============================== Задания для выключения подсветки дисплея ======================================="
+# chmod 666 /etc/crontab
+# echo -e "30 22\t* * *\tkiosk\txset dpms force off" >> /etc/crontab
+# echo -e "00 8\t* * *\tkiosk\txset dpms force on" >> /etc/crontab
+# chmod 644 /etc/crontab
+
+# # Устанавливаем правильно права
+# echo "=============================== Устанавливаем правильно права ======================================="
+# chmod -R +w /home/kiosk/.omni/
+# chmod -R +w /home/kiosk/Изображения/
+# chown -R kiosk:users /home/kiosk/
+
+# # Помещаем скрипт postinstall2.sh в автозапуск
+# echo "=============================== Помещаем скрипт postinstall2.sh в автозапуск ==================================="
+# cp $HOFF_INSTALL/postinstall2.desktop /home/kiosk/.config/autostart/
+# chmod 666 /home/kiosk/.config/autostart/postinstall2.desktop
+# chown kiosk:users /home/kiosk/.config/autostart/postinstall2.desktop
+
+# # Исправляем разрешение экрана у тачпанелей
+# if  grep '/etc/hosts' -e 'touch'; then
+#         echo -e '#!/bin/bash\nxrandr --size 1920x1080' > /home/kiosk/.xprofile && chmod 644 /home/kiosk/.xprofile && chown kiosk:users /home/kiosk/.xprofile
+# fi
+
+# # Отключаем энергосбережение
+# systemctl mask sleep.target
+# systemctl mask suspend.target
+# systemctl mask hibernate.target
+# systemctl mask hybrid-sleep.target
+
+# # Копируем расширение для отключения экранной клавиатуры
+# mkdir /home/kiosk/extensions
+# cp -R $HOFF_INSTALL/extensions/block-caribou-36@lxylxy123456.ercli.dev /home/kiosk/extensions
+# cp -R $HOFF_INSTALL/extensions/disable-gestures@mattbell.com.au /home/kiosk/extensions
+# chmod -R 744 /home/kiosk/extensions/
+# chown -R kiosk:users /home/kiosk/extensions/
+apt-get upgrade -y -q
+#Reboot
+echo "=============================== Reboot ======================================="
+rm -f /etc/systemd/system/postinstall.service
+reboot

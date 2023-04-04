@@ -1,0 +1,78 @@
+# - name: Копируем содержимое папки /tftp в корень на целевую машину
+#   copy:
+#     src: "{{ role_path }}/files/tftp/"
+#     dest: "/tftp/"
+#     owner: tftp
+#     group: tftp
+#     mode: '0777'
+
+- name: Создадим папку /tftp в корне
+  file:
+    path: /tftp
+    state: directory
+    mode: '0777'
+
+# - name: Создадим папку /tftp в корне
+#   file:
+#     path: /tftp/uefi/menu/
+#     state: directory
+#     mode: '0777'
+
+- name: Синхронизируем содержимое папки /tftp
+  synchronize:
+    src: "{{ role_path }}/files/tftp/"
+    # dest: "/tftp/"
+    dest: "/pxe_files/tftp/"
+    delete: yes
+    recursive: yes
+    mode: push
+  vars:
+    ansible_become: false
+
+- name: Синхронизируем каталог /tftp
+  command: rsync -avu --delete "/pxe_files/tftp/" "/tftp/"
+
+- name: Создаем директорию /tftp/uefi/menu/
+  file:
+    path=/tftp/uefi/menu/
+    state=directory
+
+- name: Копируем шаблон настроек главного меню BIOS
+  template:
+    src: "{{ role_path }}/templates/bios/pxelinux.cfg/main.conf.j2"
+    dest: "/tftp/bios/pxelinux.cfg/main.conf"
+    owner: tftp
+    group: tftp
+    mode: '0775'
+
+- name: Копируем шаблон первоначального меню UEFI
+  template:
+    src: "{{ role_path }}/templates/uefi/menu/boot.ipxe.j2"
+    dest: "/tftp/uefi/menu/boot.ipxe"
+    owner: tftp
+    group: tftp
+    mode: '0775'
+
+- name: Копируем шаблон MAIN_MENU меню UEFI
+  template:
+    src: "{{ role_path }}/templates/html/main_menu/boot.ipxe.j2"
+    dest: "/var/www/html/main_menu/boot.ipxe"
+
+- name: Копируем конфиг-файл tftpd-hpa
+  copy:
+    src: "{{ role_path }}/files/tftpd-hpa"
+    dest: "/etc/default/tftpd-hpa"
+  notify:
+    - restart tftpd-hpa
+
+- name: Копируем папку с фонами для thinstation
+  copy:
+    src: "{{ role_path }}/files/html/configs/backgrounds/"
+    dest: "/var/www/html/configs/backgrounds/"
+    
+- name: Копируем шаблон настроек thinstation.conf.network
+  template:
+    src: "{{ role_path }}/templates/html/configs/thinstation.conf.network.j2/"
+    dest: "/var/www/html/configs/thinstation.conf.network"
+    # owner: root
+    # mode: '0775'

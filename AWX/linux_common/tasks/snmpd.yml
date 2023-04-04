@@ -1,0 +1,17 @@
+- name: Устанавливаем snmpd
+  apt:
+    state: present
+    pkg:
+      - snmpd
+- name: Бэкапим оригинальный snmpd.conf
+  copy: 
+    remote_src: true
+    src: /etc/snmp/snmpd.conf
+    dest: /etc/snmp/snmpd.conf.orig
+    force: no
+- name: Засылаем новый snmpd.conf
+  template:
+    src: "{{ role_path }}/templates/snmpd_conf.j2"
+    dest: /etc/snmp/snmpd.conf
+  notify:
+    - restart snmpd

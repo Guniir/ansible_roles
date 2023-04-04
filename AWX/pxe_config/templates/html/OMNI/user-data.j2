@@ -1,0 +1,34 @@
+#cloud-config
+autoinstall:
+  version: 1
+  interactive-sections:
+    - network
+    - identity
+  early-commands:
+#    - snap set system proxy.http="http://{{ ansible_host }}:3142"
+#    - snap set system proxy.https="https://{{ ansible_host }}:3142"
+  locale: ru_RU
+  keyboard:
+    layout: en
+    variant: us
+  apt:
+    geoip: false
+    primary:
+      - arches: [default]
+        uri: "http://archive.ubuntu.com/ubuntu"
+  storage:
+    layout:
+      name: lvm
+  ssh:
+    install-server: yes
+    allow-pw: yes
+  late-commands:
+    - useradd -m -R /target -u 1001 -s /bin/bash administrator
+    - echo 'administrator:$6$kxQGIrYw$tXKtoszNHwctxpFmUbKpLlQnHiLqp27PvnfSisoaQCPnjupuU9P61bUlcU0tU.6kdzodOOr1ocRlzaxe2UBvF/' | chroot /target /usr/sbin/chpasswd -e
+    - usermod -R /target -aG sudo administrator
+    - mkdir -p /target/hoff_install/
+    - cp -Rf /cdrom/pool/extra/* /target/hoff_install/
+    - wget -r --no-parent -nH -P /target/hoff_install/ http://{{ ansible_host }}/OMNI/postinstall.sh
+    - chmod +x /target/hoff_install/postinstall.sh
+    - cp -Rf /cdrom/pool/extra/postinstall.service /target/etc/systemd/system
+    - curtin in-target --target=/target -- systemctl enable postinstall

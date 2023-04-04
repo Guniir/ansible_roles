@@ -1,0 +1,7 @@
+all:
+  vars:
+    ansible_connection: ssh
+    ansible_user: itadmin_develop
+    ansible_become: true
+  hosts:
+    test-ls-001.kifr-ru.local:

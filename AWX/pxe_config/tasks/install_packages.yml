@@ -1,0 +1,9 @@
+- name: Удостоверяемся, что присутствуют необходимые пакеты
+  apt:
+    pkg:
+      - apache2
+      - apache2-utils
+      - tftpd-hpa
+      - nfs-kernel-server
+    update_cache: yes
+    state: present

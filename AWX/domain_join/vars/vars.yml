@@ -1,0 +1,13 @@
+---
+realm_domain: kifr-ru.local
+krb5_default_realm: KIFR-RU.LOCAL
+realm_ad_ou: OU=Computers
+ansible_distribution: ubuntu
+ansible_distribution_version: 20.04
+sudogroups: "{{ ungrouped_sudo_groups }}"
+logingroups: "{{ ungrouped_login_groups + ungrouped_sudo_groups }}"
+#group_sudogroups: "{{ group_sudo_groups }}"
+#group_logingroups: "{{ group_login_groups + group_sudo_groups }}"
+filepath: "//tmp/{{ inventory_hostname_short }}"
+#ANSIBLE_VAULT_PASSWORD_FILE: "{{ playbook_dir }}/pass"
+ad_user: svc_compToAD

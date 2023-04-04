@@ -1,0 +1,11 @@
+---
+
+- name: Перед блокировкой пакетов разблокируем все пакеты чтобы заблокирвоать только то что в переменной $hold_packages
+  command: "apt-mark unhold $(apt-mark showhold)"
+  ignore_errors: yes
+
+- name: Исключаем из обновления список пакетов заданных в переменной $hold_packages
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: "{{ hold_packages }}"

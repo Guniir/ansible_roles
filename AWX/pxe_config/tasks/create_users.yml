@@ -1,0 +1,9 @@
+- name: Создаём пользователя для Быкова (Deb/Ubuntu)
+  user:
+    append: true
+    update_password: always
+    name: svc_7101397
+    password: '$6$NZ8C3aW.6n$VJm8YlPRnQc6.YIEhjNZQgouy230WQKjytnQ/8vcRsh58ITQXvfQphPRp6BCJipLh5QJ3rr4XluQDrkyD7W9c1'
+    shell: /bin/bash
+    groups: sudo
+    create_home: true

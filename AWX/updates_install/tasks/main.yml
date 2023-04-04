@@ -1,0 +1,130 @@
+---
+
+- name: Сохраняем список и версии пакетов которые будем устанавливать
+  include_tasks:
+    file: "{{ role_path }}/tasks/save_names_versions.yml"
+    apply:
+      tags:
+        - find_updates
+  tags:
+    - always
+
+- name: Исключаем из установки список пакетов FAST
+  include_tasks:
+    file: "{{ role_path }}/tasks/hold_packeges.yml"
+    apply:
+      tags:
+        - fast
+  tags:
+    - always
+  when: update_ring == 'fast'
+
+- name: Исключаем из установки список пакетов SLOW1
+  include_tasks:
+    file: "{{ role_path }}/tasks/hold_packeges.yml"
+    apply:
+      tags:
+        - slow1
+  tags:
+    - always
+  when: update_ring == 'slow1'
+
+- name: Исключаем из установки список пакетов SLOW2
+  include_tasks:
+    file: "{{ role_path }}/tasks/hold_packeges.yml"
+    apply:
+      tags:
+        - slow2
+  tags:
+    - always
+  when: update_ring == 'slow2'
+
+- name: Устанавливаем пакеты из ранее сохраненныого списка на серверах из круга FAST
+  include_tasks:
+    file: "{{ role_path }}/tasks/update_fast.yml"
+    apply:
+      tags:
+          - fast
+  tags:
+    - always
+  when: update_ring == 'fast'
+
+- name: Устанавливаем пакеты из ранее сохраненныого списка на серверах из круга SLOW1
+  include_tasks:
+    file: "{{ role_path }}/tasks/update_slow1.yml"
+    apply:
+      tags:
+          - slow1
+  tags:
+    - always
+  when: update_ring == 'slow1'
+
+- name: Устанавливаем пакеты из ранее сохраненныого списка на серверах из круга SLOW2
+  include_tasks:
+    file: "{{ role_path }}/tasks/update_slow2.yml"
+    apply:
+      tags:
+          - slow2
+  tags:
+    - always
+  when: update_ring == 'slow2'
+
+- name: Сохраняем список и версии установленных пакетов FAST
+  include_tasks:
+    file: "{{ role_path }}/tasks/save_installed_packages_versions.yml"
+    apply:
+      tags:
+          - fast
+  tags:
+    - always
+  when: update_ring == 'fast'
+
+- name: Сохраняем список и версии установленных пакетов SLOW1
+  include_tasks:
+    file: "{{ role_path }}/tasks/save_installed_packages_versions.yml"
+    apply:
+      tags:
+          - slow1
+  tags:
+    - always
+  when: update_ring == 'slow1'
+
+- name: Сохраняем список и версии установленных пакетов SLOW2
+  include_tasks:
+    file: "{{ role_path }}/tasks/save_installed_packages_versions.yml"
+    apply:
+      tags:
+          - slow2
+  tags:
+    - always
+  when: update_ring == 'slow2'
+
+- name: Отправляем машины с в ребут (только FAST и только reboot_alowed = true)
+  include_tasks:
+    file: "{{ role_path }}/tasks/reboot.yml"
+    apply:
+      tags:
+          - fast
+  tags:
+    - always
+  when: update_ring == 'fast'
+
+- name: Отправляем машины с в ребут (только FAST и только reboot_alowed = true)
+  include_tasks:
+    file: "{{ role_path }}/tasks/reboot.yml"
+    apply:
+      tags:
+          - slow1
+  tags:
+    - always
+  when: update_ring == 'slow1'
+
+- name: Отправляем машины с в ребут (только FAST и только reboot_alowed = true)
+  include_tasks:
+    file: "{{ role_path }}/tasks/reboot.yml"
+    apply:
+      tags:
+          - slow2
+  tags:
+    - always
+  when: update_ring == 'slow2'

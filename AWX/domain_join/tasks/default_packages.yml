@@ -1,0 +1,60 @@
+- name: Устанавливаем базовый набор софта Ubuntu
+  apt:
+    update_cache: yes
+    state: present
+    pkg:
+      - mc
+      - jq
+      - tcpdump
+      - python3-pip
+      - apt-transport-https
+      - iftop
+      - iotop
+      - htop
+      - curl
+      - wget
+      - rsync
+      - vim
+      - parted
+      - gnupg
+      - sysstat
+  when:
+    - os_distrib == 'ubuntu'
+
+- name: Устанавливаем базовый набор софта Debian
+  apt:
+    update_cache: yes
+    state: present
+    pkg:
+      - mc
+      - jq
+      - tcpdump
+      - python3-pip
+      - apt-transport-https
+      - iftop
+      - iotop
+      - htop
+      - curl
+      - wget
+      - rsync
+      - parted
+      - gnupg
+  when:
+    - os_distrib == 'debian'
+
+# Отдельно - потому что может потребоваться handler
+- name: Устанавливаем open-vm-tools
+  apt:
+    state: present
+    pkg:
+      - open-vm-tools
+
+- name: Дизейблим multipathd
+  service:
+    name: multipathd
+    enabled: no
+    state: stopped
+  when:
+    - os_distrib == 'ubuntu'
+    - disable_multipathd
+  failed_when: no

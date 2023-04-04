@@ -1,0 +1,17 @@
+- name: Копируем дефолтный /etc/apt/sources.list в /etc/apt/sources.list_bak
+  copy:
+    src: "/etc/apt/sources.list"
+    dest: "/etc/apt/sources.list_bak"
+    remote_src: yes
+
+- name: Удаляем дефолтный файл /etc/apt/sources.list
+  file:
+    path: "/etc/apt/sources.list"
+    state: absent
+
+- name: Копируем Nexus-D-002_ubuntu_18.list если ОС Ubuntu 18.04
+  copy:
+    src: "{{ role_path }}/files/Nexus-D-002_ubuntu_18.list"
+    dest: "/etc/apt/sources.list"
+  when:
+    - os_distrib == 'ubuntu'

@@ -1,0 +1,54 @@
+#!ipxe
+
+:start
+menu UEFI Level 1
+item Thin_Boot Boot Thinstation
+item BOOT_LOCAL Boot Local HDD
+item LEVEL_2 UEFI Level 2
+item Reboot Reboot PC
+item Poweroff Poweroff PC
+item Exit Exit
+#item --gap ipxe shell
+#item shell       Drop to iPXE shell
+set menu-timeout 5000
+isset ${menu-default} || set menu-default BOOT_LOCAL
+#isset ${menu-default} || set menu-default Thin_Boot
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+goto ${selected}
+
+#:failed
+#echo Booting failed, dropping to shell
+#goto shell
+
+#:shell
+#echo Type 'exit' to get the back to the menu
+#shell
+#set menu-timeout 0
+#set submenu-timeout 0
+#goto start
+
+:Thin_Boot
+set server_ip {{ ansible_host }}
+set args3 ip=dhcp splash=silent,theme:default load_ramdisk=1 ramdisk_blocksize=4096 ramdisk_size=4096000 console=tty1 vt.global_cursor_default=0 quiet loglevel=3 LM=3
+kernel http://${server_ip}/thinstation/boot/vmlinuz initrd=initrd
+initrd http://${server_ip}/thinstation/boot/initrd ||
+imgargs vmlinuz initrd=initrd ${args3} ${args4}
+imgstat
+boot || read void
+
+:BOOT_LOCAL
+sanboot --no-describe --drive 0x80
+
+# :UEFI Level 2
+:LEVEL_2
+login
+chain http://${username:uristring}:${password:uristring}@{{ ansible_host }}/main_menu/boot.ipxe
+
+:Reboot
+reboot
+
+:Poweroff
+poweroff
+
+:Exit
+exit

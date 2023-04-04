@@ -1,0 +1,8 @@
+---
+
+- name: Отправляем в ребут машины с тегом reboot_alowed через 30 секунд
+  reboot:
+    pre_reboot_delay: 30
+    post_reboot_delay: 30
+    reboot_timeout: 600
+  when: reboot_alowed == true

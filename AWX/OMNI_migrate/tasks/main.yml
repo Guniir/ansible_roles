@@ -1,0 +1,5 @@
+---
+# tasks file for OMNI_migrate
+- name: Опустошаем папку со старыми сертификатами и запрашиваем новые
+  include_tasks:
+    file: "{{ role_path }}/tasks/rm_certs.yml"

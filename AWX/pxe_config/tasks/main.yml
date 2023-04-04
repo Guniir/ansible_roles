@@ -1,0 +1,29 @@
+---
+- name: Создаем пользователя для Быкова
+  include_tasks:
+    file: "{{ role_path }}/tasks/create_users.yml"
+
+- name: Устанавливаем пакеты
+  include_tasks:
+    file: "{{ role_path }}/tasks/install_packages.yml"
+
+- name: Настраиваем NFS
+  include_tasks:
+    file: "{{ role_path }}/tasks/config_NFS.yml"
+
+# - name: Настраиваем Apache2
+#   include_tasks:
+#     file: "{{ role_path }}/tasks/config_apache2.yml"
+
+- name: копируем файлы с нексуса
+  include_tasks:
+    file: "{{ role_path }}/tasks/config_download.yml"
+
+- name: Настраиваем tftpd-hpa
+  include_tasks:
+    file: "{{ role_path }}/tasks/config_tftpd.yml"
+
+
+# - name: debug task
+#   include_tasks:
+#     file: "{{ role_path }}/tasks/debug.yml"

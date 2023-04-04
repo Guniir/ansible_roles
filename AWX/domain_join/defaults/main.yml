@@ -1,0 +1,3 @@
+---
+# defaults file for domain_join
+disable_multipathd: true

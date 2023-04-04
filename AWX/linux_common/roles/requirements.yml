@@ -1,0 +1,2 @@
+- src: git@gitlab.hoff.ru:linux_unix/linux_common.git
+  scm: git

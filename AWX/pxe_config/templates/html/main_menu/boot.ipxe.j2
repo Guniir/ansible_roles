@@ -1,0 +1,79 @@
+#!ipxe
+
+:start
+menu UEFI Level 2
+item BOOT_LOCAL Boot Local HDD
+item UEFI_SCCM SCCM boot
+item Ubuntu_Touch_install Ubuntu Touch Install
+item Ubuntu_Desktop_install Ubuntu Desktop Install
+item Thin_Boot Thin Boot
+item Reboot Reboot PC
+item Poweroff Poweroff PC
+item Exit Exit
+#item --gap ipxe shell
+#item shell       Drop to iPXE shell
+set menu-timeout 15000
+isset ${menu-default} || set menu-default BOOT_LOCAL
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+goto ${selected}
+
+#:failed
+#echo Booting failed, dropping to shell
+#goto shell
+
+#:shell
+#echo Type 'exit' to get the back to the menu
+#shell
+#set menu-timeout 0
+#set submenu-timeout 0
+#goto start
+
+:BOOT_LOCAL
+sanboot --no-describe --drive 0x80
+
+:UEFI_SCCM
+chain tftp://{{ sccm_dp }}/SMSBoot/CDL001B4/x64/wdsmgfw.efi
+
+:Ubuntu_Touch_install
+set root-path /tftp/ipxe/menu/
+set server_ip {{ ansible_host }}
+set nfs_path /var/www/html/Ubuntu_20.04
+set args1 ip=dhcp vga=791 boot=casper toram autoinstall ds=nocloud-net;s=http://{{ ansible_host }}/OMNI/
+set args2 netboot=nfs nfsroot={{ Apt_Cache_Ip }}:${nfs_path} root=/dev/nfs ro
+kernel nfs://${server_ip}:${nfs_path}/casper/vmlinuz ||
+initrd nfs://${server_ip}:${nfs_path}/casper/initrd ||
+imgargs vmlinuz initrd=initrd ${args1} ${args2}
+imgstat
+boot || read void
+
+:Ubuntu_Desktop_install
+set root-path /tftp/ipxe/menu/
+set server_ip {{ ansible_host }}
+set nfs_path /var/www/html/Ubuntu_20.04
+set args1 ip=dhcp vga=791 boot=casper toram autoinstall ds=nocloud-net;s=http://{{ ansible_host }}/desktop/
+set args2 netboot=nfs nfsroot={{ Apt_Cache_Ip }}:${nfs_path} root=/dev/nfs ro
+kernel nfs://${server_ip}:${nfs_path}/casper/vmlinuz ||
+initrd nfs://${server_ip}:${nfs_path}/casper/initrd ||
+imgargs vmlinuz initrd=initrd ${args1} ${args2}
+imgstat
+boot || read void
+
+
+:Thin_Boot
+
+set server_ip {{ ansible_host }}
+set args3 ip=dhcp splash=silent,theme:default load_ramdisk=1 ramdisk_blocksize=4096 ramdisk_size=4096000 console=tty1 vt.global_cursor_default=0 quiet loglevel=3 LM=3
+kernel http://${server_ip}/thinstation/boot/vmlinuz initrd=initrd
+initrd http://${server_ip}/thinstation/boot/initrd ||
+imgargs vmlinuz initrd=initrd ${args3} ${args4}
+imgstat
+boot || read void
+
+:Reboot
+reboot
+
+:Poweroff
+poweroff
+
+:Exit
+exit

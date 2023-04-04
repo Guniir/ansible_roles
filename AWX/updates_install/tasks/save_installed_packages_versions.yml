@@ -1,0 +1,39 @@
+---
+
+- name: Load Secrets
+  include_vars: "secrets.yml"
+
+- name: Собираем факты по установленным пакетам
+  shell: "apt list --installed > '/tmp/{{ inventory_hostname_short }}'"
+
+# - name: Собираем факты по установленным пакетам
+#   package_facts:
+#     manager: auto
+
+# - name: Сохраняем список установленных пакетов в файл
+#   copy:
+#     content:  "{{ ansible_facts.packages }}"
+#     dest: /tmp/{{ inventory_hostname_short }}
+#   delegate_to: "{{  ansible_host  }}"
+
+- name: Выгружаем installed_packages.txt на Nexus-D-002
+  uri:
+    url: "http://nexus-d-002.kifr-ru.local/repository/update_lists/installed_packages/{{ inventory_hostname_short }}"
+    method: PUT
+    remote_src: yes
+    src: "/tmp/{{ inventory_hostname_short }}"
+    user: '{{ AWX_user }}'
+    password: '{{ AWX_password }}'
+    force_basic_auth: yes
+    headers:
+      Content-Type: application/octet-stream  # To avoid automatic 'application/x-www-form-urlencoded'
+    status_code:
+      - 201
+
+- name: Выгружаем installed_packages.txt на FTP-D-002
+  command: curl --silent --user '{{ ftp_user }}':'{{ ftp_password }}' ftp://ftp-d-002.kifr-ru.local -T '/tmp/{{ inventory_hostname_short }}'
+
+- name: Удалем мусор после себя
+  file:
+    path: '/tmp/{{ inventory_hostname_short }}'
+    state: absent

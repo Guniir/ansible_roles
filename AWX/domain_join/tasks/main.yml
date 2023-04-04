@@ -1,0 +1,56 @@
+- name: Собираем немного фактов
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+- set_fact: 
+    os_distrib: "{{ ansible_facts['distribution'] | lower }}" 
+
+- name: Дефолтные пароли
+  include_tasks: "{{ role_path }}/tasks/default_users.yml"
+
+- name: Прописываем внутренний репозиторий Nexus-d-002 для Ubuntu 20.04
+  include_tasks: "{{ role_path }}/tasks/internal_repo_20.yml"
+  tags:
+  - ubuntu20
+
+- name: Прописываем внутренний репозиторий Nexus-d-002 для Ubuntu 18.04
+  include_tasks: "{{ role_path }}/tasks/internal_repo_18.yml"
+  tags:
+  - ubuntu18
+
+- name: Устанавливаем стандартный софт
+  include_tasks: "{{ role_path }}/tasks/default_packages.yml"
+
+- name: Удостоверяемся, что snmpd в порядке (для мониторинга)
+  include_tasks: "{{ role_path }}/tasks/snmpd.yml"
+
+- name: Разные минорные настройки ОС
+  include_tasks: "{{ role_path }}/tasks/system_settings.yml"
+
+# Надо бы собирать инфу о службах так, как ниже закомменчено,
+# и выполнять следующий таск только если докер установлен.
+# Но нужон более свежий модуль, ибо менялся формат вывода systemctl list-unit-files
+# А установленная на ansible-d-001 версия к этому не готова ещё
+# - name: Собираем факты о сервисах
+#   ansible.builtin.service_facts:
+
+- name: Подсовываем docker_daemon.json, если его ещё нет. Пока только для Ubuntu
+  include_tasks: "{{ role_path }}/tasks/docker_config.yml"
+  when:
+    - os_distrib == 'ubuntu'
+
+# tasks file for domain_join
+- name: Роль присоединения Linux к AD
+  include_tasks:
+    file: "{{ role_path }}/tasks/domain_join.yml"
+    apply:
+      tags:
+          - change_access
+  tags:
+    - always
+
+- name: Отправляем машины с в ребут
+  include_tasks:
+    file: "{{ role_path }}/tasks/reboot.yml"
+  tags:
+  - reboot
